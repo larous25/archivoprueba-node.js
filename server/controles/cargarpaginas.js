@@ -18,11 +18,15 @@ var fs = require('fs');
     tiposimagenes['.ico'] = 'images/ico';
 
 function index() {
-   return fs.readFileSync("./vistas/index.html");
+   return leer("./vistas/index.html");
 }
 
 function noesta() { 
-    return fs.readFileSync("./vistas/noesta.html");
+    return leer("./vistas/noesta.html");
+}
+
+function leer(directorio) {
+    return fs.readFileSync(directorio);
 }
 
 exports.paginas = paginas;
