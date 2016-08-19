@@ -1,60 +1,70 @@
-var url = require('url'),
-path = require('path'),
-carga = require("./cargarpaginas");
+'use strict';
 
-/*
-    toma la ruta de la url
-    y de paso lo otro para hacerlo 
-    como se llamaaa 
-    bueno por hilos
-*/
-function rutear(requiere,respuesta) {
-    var rutarequerida;
-    rutarequerida = url.parse(requiere.url).pathname;
-    ruta(rutarequerida,respuesta)
+const path = require('path');
+const url  = require('url');
+
+class RouterEs6{
+
+    constructor(){
+        this.metodos = ['GET', 'POST', 'PUT', 'DELETE'];
+        this.routes = new Map();
+    }
+
+    añadir(metodo, routa, callback){
+        metodo = this.comprobarMetodo(metodo);
+        let tiene = this.routes.has(metodo);
+
+        if(tiene){
+            this.routes.get(metodo).set(routa, callback);
+        }else{
+            
+            let rutas = new Map();
+            rutas.set(routa, callback);
+            this.routes.set(metodo, rutas);
+        }
+    }
+
+    // comprueba que la ruta esta 
+    // se encuentra guardad y 
+    // ejecuta la funcion
+    enrutar(req, res){
+        let ruta = this.formalizar(req.url);
+        let metodo = req.method;
+
+        let tieneMetodo = this.routes.has(metodo);
+
+
+        if(tieneMetodo){
+        
+            let tieneRuta = this.routes.get(metodo).has(ruta);
+      
+            if(tieneRuta){
+                return this.routes.get(metodo).get(ruta)();                
+            }
+            console.log('eee');
+        }
+            return this.noFunctiona(res);
+    }
+
+    comprobarMetodo(metodo){
+        for (var i = 0; i < this.metodos.length; i++) {
+            if(new RegExp(this.metodos[i], 'i').test(metodo)){
+                return this.metodos[i];
+            }
+        }
+
+        return metodo;
+    }
+
+    formalizar(urlString){
+        return url.parse(urlString).pathname;
+    }
+
+    noFunctiona(res){
+        res.writeHead(404, {'Conten-Type':'text/html'});
+        res.end('no found');
+    }
+
 }
 
-/*
-    deside que mostrar en esa ruta
-*/
-function ruta(laruta,respuesta) {
-
-    var archivo = path.basename(laruta),tipo;
-
-    /*  
-        si  
-         la ruta no tiene extensión
-			el tipo predefinido es html
-        Si no 
- 			elegimos el tipo y dejamos extensión
-					si el archivo esta
-      */  
-                if (path.extname(archivo) == "") {
-                    tipo = carga.tipos[".html"];
-                } else {
-                    if (carga.tipos[path.extname(archivo)] != null) {
-                        tipo = carga.tipos[path.extname(archivo)];
-                    } else if (carga.tiposimagenes[path.extname(archivo)] != null) {
-                        tipo = carga.tiposimagenes[path.extname(archivo)];
-                    } else {
-                        console.log("es otro tipo de archivo: "+path.extname(archivo));
-                    }
-                }
-
-            if(carga.paginas[archivo]!=null){
-                respuesta.writeHead(200,{'Content-Type':tipo});
-                respuesta.write(carga.paginas[archivo] );
-                respuesta.end();
-            }else if(carga.tiposimagenes[path.extname(archivo)]!=null){
-                console.log(carga.tiposimagenes[path.extname(archivo)]);
-            }else{
-                respuesta.writeHead(404,{'Content-Type':tipo});
-                respuesta.write(carga.paginas['noesta']);
-                respuesta.end();
-            } 
-    
-  
-          
-}
-
-exports.rutear = rutear;
+module.exports = RouterEs6;
